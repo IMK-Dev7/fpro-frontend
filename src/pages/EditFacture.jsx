@@ -232,11 +232,11 @@ const EditFacture = () => {
                       <input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={ligne.prixUnitaire}
                         onChange={(e) => updateLigne(index, 'prixUnitaire', e.target.value)}
                         className="input-field text-sm sm:text-base"
-                        placeholder="0.00"
+                        placeholder="0"
                       />
                     </div>
 
