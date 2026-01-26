@@ -18,6 +18,7 @@ api.interceptors.response.use(
 );
 
 export const factureService = {
+  // =============== FACTURES ===============
   getAll: (page = 0, size = 10, sortBy = 'dateFacturation', direction = 'desc') =>
     api.get(`/factures/paginated?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`),
   
@@ -39,6 +40,24 @@ export const factureService = {
   downloadPdf: (id) => api.get(`/factures/${id}/pdf`, { responseType: 'blob' }),
   
   viewPdf: (id) => api.get(`/factures/${id}/view`, { responseType: 'blob' }),
+  
+  getByStatut: (statut, page = 0, size = 10, sortBy = 'dateFacturation', direction = 'desc') =>
+    api.get(`/factures/by-statut?statut=${statut}&page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`),
+  
+  getAvecResteAPayer: () => api.get('/factures/reste-a-payer'),
+  
+  getAvecResteAPayerPaginated: (page = 0, size = 10, sortBy = 'resteAPayer', direction = 'desc') =>
+    api.get(`/factures/paginated/reste-a-payer?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`),
+  
+  getStatsPaiements: () => api.get('/factures/stats-paiements'),
+  
+  getPaiements: (factureId) => api.get(`/factures/${factureId}/paiements`),
+  
+  addPaiement: (factureId, data) => api.post(`/factures/${factureId}/paiements`, data),
+  
+  deletePaiement: (factureId, paiementId) => api.delete(`/factures/${factureId}/paiements/${paiementId}`),
+  
+  getTotalPaiements: (factureId) => api.get(`/factures/${factureId}/paiements/total`),
 };
 
 export default api;
