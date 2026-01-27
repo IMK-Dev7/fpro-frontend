@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Save, ArrowLeft, Loader, FileText, Calendar, Info } from 'lucide-react';
+import { 
+  Plus, Trash2, Save, ArrowLeft, Loader, 
+  FileText, Calendar, Info, ChevronDown, ChevronUp
+} from 'lucide-react';
 import { factureService } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
@@ -15,6 +18,7 @@ const EditFacture = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [facture, setFacture] = useState(null);
+  const [expandedLine, setExpandedLine] = useState(null);
   
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm();
 
@@ -47,9 +51,14 @@ const EditFacture = () => {
     }
   };
 
-  const addLigne = () => {
-    const newLignes = [...lignes, { quantite: 1, designation: '', prixUnitaire: 0 }];
+  const addLigne = (index = null) => {
+    const newLignes = [...lignes];
+    const insertIndex = index !== null ? index + 1 : newLignes.length;
+    newLignes.splice(insertIndex, 0, { quantite: 1, designation: '', prixUnitaire: 0 });
     setValue('lignes', newLignes);
+    if (index !== null) {
+      setExpandedLine(insertIndex);
+    }
   };
 
   const removeLigne = (index) => {
@@ -59,6 +68,7 @@ const EditFacture = () => {
     }
     const newLignes = lignes.filter((_, i) => i !== index);
     setValue('lignes', newLignes);
+    setExpandedLine(null);
   };
 
   const updateLigne = (index, field, value) => {
@@ -88,6 +98,10 @@ const EditFacture = () => {
       month: 'long',
       year: 'numeric'
     });
+  };
+
+  const toggleLineExpansion = (index) => {
+    setExpandedLine(expandedLine === index ? null : index);
   };
 
   const onSubmit = async (data) => {
@@ -211,7 +225,7 @@ const EditFacture = () => {
             </div>
             <button
               type="button"
-              onClick={addLigne}
+              onClick={() => addLigne()}
               className="btn btn-primary flex items-center gap-2 w-full sm:w-auto justify-center py-2.5"
             >
               <Plus size={18} />
@@ -221,90 +235,130 @@ const EditFacture = () => {
 
           <div className="space-y-3 sm:space-y-4">
             {lignes.map((ligne, index) => (
-              <div key={index} className="border border-gray-200 rounded-xl p-3 sm:p-4 hover:border-gray-300 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-sm font-medium">
-                      {index + 1}
+              <div key={index} className="border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
+                {/* En-tête de la ligne */}
+                <div 
+                  className="p-3 cursor-pointer sm:cursor-default"
+                  onClick={() => window.innerWidth < 640 && toggleLineExpansion(index)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <span className="font-medium text-gray-700 text-sm sm:text-base">
+                        Ligne {index + 1}
+                      </span>
                     </div>
-                    <span className="font-medium text-gray-700 text-sm sm:text-base">
-                      Ligne {index + 1}
-                    </span>
+                    
+                    <div className="flex items-center gap-1">
+                      {/* Bouton supprimer */}
+                      {lignes.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeLigne(index);
+                          }}
+                          className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded"
+                          aria-label="Supprimer la ligne"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                      
+                      {/* Chevron pour mobile */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLineExpansion(index);
+                        }}
+                        className="sm:hidden text-gray-500 p-1"
+                        aria-label={expandedLine === index ? "Réduire" : "Développer"}
+                      >
+                        {expandedLine === index ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      </button>
+                    </div>
                   </div>
-                  {lignes.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeLigne(index)}
-                      className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded"
-                      aria-label="Supprimer la ligne"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  {/* Quantité */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      Quantité *
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={ligne.quantite}
-                      onChange={(e) => updateLigne(index, 'quantite', e.target.value)}
-                      className="input-field w-full py-2 text-sm sm:text-base"
-                      placeholder="1"
-                    />
-                  </div>
-
-                  {/* Désignation */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      Désignation *
-                    </label>
-                    <input
-                      type="text"
-                      value={ligne.designation}
-                      onChange={(e) => updateLigne(index, 'designation', e.target.value)}
-                      className="input-field w-full py-2 text-sm sm:text-base"
-                      placeholder="Description du produit/service"
-                    />
-                  </div>
-
-                  {/* Prix unitaire */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      Prix unitaire *
-                    </label>
-                    <div className="relative">
+                {/* Détails de la ligne */}
+                <div className={`${expandedLine === index ? 'block' : 'hidden sm:block'} px-3 pb-3 border-t border-gray-100 pt-3`}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Quantité */}
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Quantité *
+                      </label>
                       <input
                         type="number"
-                        min="0"
-                        step="1"
-                        value={ligne.prixUnitaire}
-                        onChange={(e) => updateLigne(index, 'prixUnitaire', e.target.value)}
-                        className="input-field w-full py-2 pr-10 text-sm sm:text-base"
-                        placeholder="0"
+                        min="1"
+                        value={ligne.quantite}
+                        onChange={(e) => updateLigne(index, 'quantite', e.target.value)}
+                        className="input-field w-full py-2 text-sm sm:text-base"
+                        placeholder="1"
                       />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
-                        FCFA
+                    </div>
+
+                    {/* Désignation */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Désignation *
+                      </label>
+                      <input
+                        type="text"
+                        value={ligne.designation}
+                        onChange={(e) => updateLigne(index, 'designation', e.target.value)}
+                        className="input-field w-full py-2 text-sm sm:text-base"
+                        placeholder="Description du produit/service"
+                      />
+                    </div>
+
+                    {/* Prix unitaire */}
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Prix unitaire *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={ligne.prixUnitaire}
+                          onChange={(e) => updateLigne(index, 'prixUnitaire', e.target.value)}
+                          className="input-field w-full py-2 pr-10 text-sm sm:text-base"
+                          placeholder="0"
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">
+                          FCFA
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Montant calculé */}
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Montant
+                      </label>
+                      <div className="input-field bg-gray-50 w-full py-2 text-sm sm:text-base flex items-center justify-between">
+                        <span className="font-medium">
+                          {formatMontant((parseInt(ligne.quantite) || 0) * (parseFloat(ligne.prixUnitaire) || 0))}
+                        </span>
+                        <span className="text-gray-500 text-xs">FCFA</span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Montant calculé */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      Montant
-                    </label>
-                    <div className="input-field bg-gray-50 w-full py-2 text-sm sm:text-base flex items-center justify-between">
-                      <span className="font-medium">
-                        {formatMontant((parseInt(ligne.quantite) || 0) * (parseFloat(ligne.prixUnitaire) || 0))}
-                      </span>
-                      <span className="text-gray-500 text-xs">FCFA</span>
-                    </div>
+                  
+                  {/* Bouton "Ajouter une ligne" en bas de chaque ligne - VERT */}
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => addLigne(index)}
+                      className="w-full flex items-center justify-center gap-2 p-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium"
+                    >
+                      <Plus size={18} />
+                    </button>
                   </div>
                 </div>
               </div>

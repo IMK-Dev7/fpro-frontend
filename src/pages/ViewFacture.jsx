@@ -82,7 +82,7 @@ const ViewFacture = () => {
         lastModified: Date.now(),
       });
 
-      const shareText = `MAHAMADOU DOUCOURE & FRERES vous remercie de votre confiance`;
+      const shareText = `MAHAMADOU DOUCOURE & FRERES vous remercie de votre confiance !`;
 
       if (navigator.share) {
         try {
